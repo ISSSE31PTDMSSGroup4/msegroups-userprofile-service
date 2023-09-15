@@ -1,0 +1,5 @@
+# Ignore target file
+!*/target/
+
+# Ignore testmongodb
+!testmongodb/
