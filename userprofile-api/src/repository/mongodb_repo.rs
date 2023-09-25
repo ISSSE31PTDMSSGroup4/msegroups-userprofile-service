@@ -39,15 +39,19 @@ impl MongoRepo {
         Ok(user)
     }
 
-    pub fn get_user_profile(&self, id: &String) -> Result<User, Error> {
-        let obj_id = ObjectId::parse_str(id).unwrap();
+    pub fn get_user_profile(&self, name: &String) -> Result<User, Error> {
+        // let obj_id = ObjectId::parse_str(id).unwrap();
+        let obj_id = self.get_userid_by_username(name).id;
+        println!("object id: {:?}", obj_id);
         let filter = doc! {"_id": obj_id};
         let user_detail = self.col.find_one(filter, None).ok().expect("Error getting user's profile");
         Ok(user_detail.unwrap())
     }
 
-    pub fn update_user_profile(&self, id:&String, new_user: User) -> Result<UpdateResult, Error> {
-        let obj_id = ObjectId::parse_str(id).unwrap();
+    pub fn update_user_profile(&self, name:&String, new_user: User) -> Result<UpdateResult, Error> {
+        // let obj_id = ObjectId::parse_str(id).unwrap();
+        let obj_id = self.get_userid_by_username(name).id;
+        println!("object id: {:?}", obj_id);
         let filter = doc! {"_id": obj_id};
         let new_doc = doc! {
             "$set":
@@ -74,5 +78,11 @@ impl MongoRepo {
         let cursors = self.col.find(None, None).ok().expect("Error getting list of users");
         let users = cursors.map(|doc| doc.unwrap()).collect();
         Ok(users)
+    }
+
+    pub fn get_userid_by_username(&self, name: &String) -> User {
+        let filter = doc! {"name": name};
+        let user_obj = self.col.find_one(filter, None).ok().expect("User does not exists");
+        user_obj.unwrap()
     }
 }
