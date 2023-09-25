@@ -8,7 +8,6 @@ WORKDIR /usr/src/app
 COPY userprofile-api .
 COPY .env .
 
-RUN cargo install --path .
 RUN cargo build
 
 EXPOSE 8001
