@@ -18,7 +18,7 @@ pub fn create_user_profile(
     let user_detail = db.create_user_profile(data);
     match user_detail {
         Ok(user) => Ok(Json(user)),
-        Err(_) => Err(Status::InternalServerError),
+        Err(_) => Err(Status::BadRequest),
     }
 }
 
@@ -32,7 +32,7 @@ pub fn get_user_profile(db: &State<MongoRepo>, path: String) -> Result<Json<User
     let user_detail = db.get_user_profile(&name);
     match user_detail {
         Ok(user) => Ok(Json(user)),
-        Err(_) => Err(Status::InternalServerError),
+        Err(_) => Err(Status::BadRequest),
     }
 }
 
@@ -61,13 +61,13 @@ pub fn update_user_profile(
                 let updated_user_info = db.get_user_profile(&new_user.name);
                 return match updated_user_info {
                     Ok(user) => Ok(Json(user)),
-                    Err(_) => Err(Status::InternalServerError)
+                    Err(_) => Err(Status::BadRequest)
                 };
             } else {
                 return Err(Status::NotFound);
             }
         }
-        Err(_) => Err(Status::InternalServerError),
+        Err(_) => Err(Status::BadRequest),
     }
 }
 
@@ -86,7 +86,7 @@ pub fn delete_user_profile(db: &State<MongoRepo>, path: String) -> Result<Json<&
                 return Err(Status::NotFound);
             }
         }
-        Err(_) => Err(Status::InternalServerError),
+        Err(_) => Err(Status::BadRequest),
     }
 }
 
@@ -95,6 +95,20 @@ pub fn get_all_users(db: &State<MongoRepo>) -> Result<Json<Vec<User>>, Status> {
     let users = db.get_all_users();
     match users {
         Ok(users) => Ok(Json(users)),
-        Err(_) => Err(Status::InternalServerError),
+        Err(_) => Err(Status::BadRequest),
+    }
+}
+
+#[get("/user/profile/search/<path>")]
+pub fn get_user_by_substring(db: &State<MongoRepo>, path: String) -> Result<Json<User>, Status> {
+    // let id = path;
+    let name_substr = path;
+    if name_substr.is_empty() {
+        return Err(Status::BadRequest);
+    };
+    let user_list = db.get_user_by_substring(&name_substr);
+    match user_list {
+        Ok(user) => Ok(Json(user)),
+        Err(_) => Err(Status::BadRequest),
     }
 }

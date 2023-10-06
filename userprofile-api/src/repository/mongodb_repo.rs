@@ -82,4 +82,11 @@ impl MongoRepo {
         Ok(users)
     }
 
+    pub fn get_user_by_substring(&self, name: &String) -> Result<Vec<User>, Error> {
+        let filter = doc! {"name": name};
+        let cursors = self.col.find(filter, None).ok().expect("Error getting list of users");
+        let users = cursors.map(|doc| doc.unwrap()).collect();
+        Ok(users)
+    }
+
 }
