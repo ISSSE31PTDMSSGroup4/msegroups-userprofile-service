@@ -44,6 +44,7 @@ impl MongoRepo {
         // let filter = doc! {"_id": obj_id};
 
         let filter = doc! {"name": name};
+
         let user_detail = self.col.find_one(filter, None).ok().expect("Error getting user's profile");
         Ok(user_detail.unwrap())
     }
@@ -55,6 +56,7 @@ impl MongoRepo {
         // let user_detail = self.col.find_one(filter_name, None).ok().expect("Error getting user's profile");
         // let _user_id = user_detail.unwrap().id;
         // let filter = doc! {"_id": _user_id};
+
         let new_doc = doc! {
             "$set":
                 {
