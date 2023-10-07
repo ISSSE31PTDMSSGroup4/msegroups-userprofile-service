@@ -1,17 +1,27 @@
-FROM rust:1.71-slim-buster
+# FROM rust:1.71-slim-buster
+FROM rustlang/rust:nightly-buster-slim AS builder
 
 # Environment variable for rocket
 ENV ROCKET_PROFILE=production
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
 COPY userprofile-api .
 COPY .env .
-RUN rm -rf target/
+RUN cargo build --release
 
-RUN cargo build
+FROM debian:buster-slim as runner
+WORKDIR /app
+
+COPY --from=builder /app/target/release/userprofile-api /app/userprofile-api
+COPY .env ../
+COPY userprofile-api/Rocket.toml .
+
+# Environment variable for rocket
+ENV ROCKET_PROFILE=production
 
 EXPOSE 8001
 
-ENTRYPOINT ["cargo"]
-CMD ["run"]
+# ENTRYPOINT ["cargo"]
+# CMD ["run"]
+CMD ["/app/userprofile-api", "--config=/app/"]
