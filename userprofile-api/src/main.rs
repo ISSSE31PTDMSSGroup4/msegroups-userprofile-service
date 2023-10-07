@@ -5,11 +5,11 @@ mod repository;
 #[macro_use]
 extern crate rocket;
 // use rocket::{get, http::Status, serde::json::Json};
-use api::user_api::{create_user_profile, get_user_profile, update_user_profile, delete_user_profile, get_all_users};
+use api::user_api::{create_user_profile, get_user_profile, update_user_profile, delete_user_profile, get_all_users, get_user_by_substring};
 use repository::mongodb_repo::MongoRepo;
-use rocket::http::Method;
-use rocket::{get, routes};
-use rocket_cors::{AllowedHeaders, AllowOrigins};
+// use rocket::http::Method;
+// use rocket::{get, routes};
+use rocket_cors::{AllowedHeaders, AllowedOrigins};
 
 // #[get("/")]
 // fn hello() -> Result<Json<String>, Status> {
@@ -23,11 +23,11 @@ fn rocket() -> _ {
 
     let cors = rocket_cors::CorsOptions {
         allowed_origins,
-        allowed_methods: vec![Method::Get, Method::Post, Method::Put].into_iter().map(From::from).collect(),
+        allowed_methods: vec![rocket::http::Method::Get, rocket::http::Method::Post, rocket::http::Method::Put].into_iter().map(From::from).collect(),
         allowed_headers: AllowedHeaders::some(&["Authorization", "Accept", "X-USER"]),
-        allow_credentials: true.
+        allow_credentials: true,
         ..Default::default()
-    }
+    };
 
     rocket::build()
     .manage(db)
@@ -36,5 +36,6 @@ fn rocket() -> _ {
     .mount("/", routes![update_user_profile])
     .mount("/", routes![delete_user_profile])
     .mount("/", routes![get_all_users])
-    .attach(cors)
+    .mount("/", routes![get_user_by_substring])
+    .manage(cors.to_cors())
 }

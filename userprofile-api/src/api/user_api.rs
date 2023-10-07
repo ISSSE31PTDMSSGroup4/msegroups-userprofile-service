@@ -1,17 +1,34 @@
 use crate::{models::user_model::User, repository::mongodb_repo::MongoRepo};
 use mongodb::{results::InsertOneResult};
 use rocket::{http::Status, serde::json::Json, State};
+use rocket::request::{self, Request, FromRequest, Outcome};
+
+#[derive(Debug)]
+pub struct UserEmail(String);
+
+#[rocket::async_trait]
+impl<'a> FromRequest<'a> for UserEmail {
+    type Error = ();
+
+    async fn from_request(request: &'a Request<'_>) -> request::Outcome<Self,Self::Error> {
+        match request.headers().get_one("X-USER") {
+            Some(email) => Outcome::Success(UserEmail(email.to_string())),
+            None => Outcome::Failure((Status::Unauthorized, ())),
+        }
+    }
+}
 
 #[post("/user/profile", data = "<new_user>")]
 pub fn create_user_profile(
     db: &State<MongoRepo>,
     new_user: Json<User>,
+    user_email: UserEmail
 ) -> Result<Json<InsertOneResult>, Status> {
     let data = User {
         id: None,
         name: new_user.name.to_owned(),
         avatar: new_user.avatar.to_owned(),
-        email: new_user.email.to_owned(),
+        email: user_email.0.to_owned(),
         about: new_user.about.to_owned(),
     };
 
@@ -22,43 +39,44 @@ pub fn create_user_profile(
     }
 }
 
-#[get("/user/profile/<path>")]
-pub fn get_user_profile(db: &State<MongoRepo>, path: String) -> Result<Json<User>, Status> {
+#[get("/user/profile")]
+pub fn get_user_profile(db: &State<MongoRepo>, user_email: UserEmail) -> Result<Json<User>, Status> {
     // let id = path;
-    let name = path;
-    if name.is_empty() {
-        return Err(Status::BadRequest);
-    };
-    let user_detail = db.get_user_profile(&name);
+    // let name = path;
+    // if name.is_empty() {
+    //     return Err(Status::BadRequest);
+    // };
+
+    let user_detail = db.get_user_profile(&user_email.0);
     match user_detail {
         Ok(user) => Ok(Json(user)),
         Err(_) => Err(Status::BadRequest),
     }
 }
 
-#[put("/user/profile/<path>", data = "<new_user>")]
+#[put("/user/profile/update", data = "<new_user>")]
 pub fn update_user_profile(
     db: &State<MongoRepo>,
-    path: String,
     new_user: Json<User>,
+    user_email: UserEmail
 ) -> Result<Json<User>, Status> {
-    let name = path;
-    if name.is_empty() {
-        return Err(Status::BadRequest);
-    };
+    // let name = path;
+    // if name.is_empty() {
+    //     return Err(Status::BadRequest);
+    // };
     let data = User {
         // id: Some(ObjectId::parse_str(&id).unwrap()),
         id: None,
         name: new_user.name.to_owned(),
         avatar: new_user.avatar.to_owned(),
-        email: new_user.email.to_owned(),
+        email: user_email.0.to_owned(),
         about: new_user.about.to_owned(),
     };
-    let update_result = db.update_user_profile(&name, data);
+    let update_result = db.update_user_profile(&user_email.0.clone(), data);
     match update_result {
         Ok(update) => {
             if update.matched_count == 1 {
-                let updated_user_info = db.get_user_profile(&new_user.name);
+                let updated_user_info = db.get_user_profile(&user_email.0);
                 return match updated_user_info {
                     Ok(user) => Ok(Json(user)),
                     Err(_) => Err(Status::BadRequest)
@@ -100,7 +118,7 @@ pub fn get_all_users(db: &State<MongoRepo>) -> Result<Json<Vec<User>>, Status> {
 }
 
 #[get("/user/profile/search/<path>")]
-pub fn get_user_by_substring(db: &State<MongoRepo>, path: String) -> Result<Json<User>, Status> {
+pub fn get_user_by_substring(db: &State<MongoRepo>, path: String) -> Result<Json<Vec<User>>, Status> {
     // let id = path;
     let name_substr = path;
     if name_substr.is_empty() {
@@ -108,7 +126,7 @@ pub fn get_user_by_substring(db: &State<MongoRepo>, path: String) -> Result<Json
     };
     let user_list = db.get_user_by_substring(&name_substr);
     match user_list {
-        Ok(user) => Ok(Json(user)),
+        Ok(user_list) => Ok(Json(user_list)),
         Err(_) => Err(Status::BadRequest),
     }
 }
