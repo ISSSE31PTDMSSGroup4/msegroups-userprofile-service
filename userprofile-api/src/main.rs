@@ -4,12 +4,13 @@ mod repository;
 
 #[macro_use]
 extern crate rocket;
+extern crate rocket_cors;
 // use rocket::{get, http::Status, serde::json::Json};
 use api::user_api::{create_user_profile, get_user_profile, update_user_profile, delete_user_profile, get_all_users, get_user_by_substring};
 use repository::mongodb_repo::MongoRepo;
 // use rocket::http::Method;
 // use rocket::{get, routes};
-use rocket_cors::{AllowedHeaders, AllowedOrigins};
+use rocket_cors::{Cors, AllowedHeaders, AllowedOrigins};
 
 // #[get("/")]
 // fn hello() -> Result<Json<String>, Status> {
@@ -29,7 +30,16 @@ fn rocket() -> _ {
         ..Default::default()
     };
 
+    // let cors = Cors {
+    //     allowed_origins: AllowedOrigins::all(),
+    //     allowed_methods: vec![Method::Get, Method::Post, Method::Options, Method::Put],
+    //     allowed_headers: AllowedHeaders::all(),
+    //     allowed_credentials: true,
+    //     ..Default::default()
+    // };
+
     rocket::build()
+    .attach(cors.to_cors().unwrap())
     .manage(db)
     .mount("/", routes![create_user_profile])
     .mount("/", routes![get_user_profile])
@@ -37,5 +47,4 @@ fn rocket() -> _ {
     .mount("/", routes![delete_user_profile])
     .mount("/", routes![get_all_users])
     .mount("/", routes![get_user_by_substring])
-    .manage(cors.to_cors())
 }
