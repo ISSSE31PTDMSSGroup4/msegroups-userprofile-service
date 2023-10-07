@@ -1,0 +1,8 @@
+# target file
+target/
+
+# Test connection of mongodb
+# testmongodb
+
+# Cargo lock
+*/Cargo.lock
