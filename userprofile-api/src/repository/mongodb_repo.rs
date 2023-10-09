@@ -1,6 +1,6 @@
 use std::env;
-extern crate dotenv;
-use dotenv::dotenv;
+// extern crate dotenv;
+// use dotenv::dotenv;
 use regex;
 
 use mongodb::{
@@ -17,7 +17,7 @@ pub struct MongoRepo {
 
 impl MongoRepo {
     pub fn init() -> Self {
-        dotenv().ok();
+        // dotenv().ok();
         let uri = match env::var("MONGOURI") {
             Ok(v) => v.to_string(),
             Err(_) => format!("Error loading env variable"),

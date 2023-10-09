@@ -14,7 +14,7 @@ FROM debian:buster-slim as runner
 WORKDIR /app
 
 COPY --from=builder /app/target/release/userprofile-api /app/userprofile-api
-COPY .env ../
+# COPY .env ../
 COPY userprofile-api/Rocket.toml .
 
 # Environment variable for rocket

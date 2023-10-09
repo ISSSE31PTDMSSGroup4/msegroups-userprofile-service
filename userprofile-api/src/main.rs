@@ -10,7 +10,7 @@ use api::user_api::{create_user_profile, get_user_profile, update_user_profile, 
 use repository::mongodb_repo::MongoRepo;
 // use rocket::http::Method;
 // use rocket::{get, routes};
-use rocket_cors::{Cors, AllowedHeaders, AllowedOrigins};
+use rocket_cors::{AllowedHeaders, AllowedOrigins};
 
 // #[get("/")]
 // fn hello() -> Result<Json<String>, Status> {
@@ -25,7 +25,8 @@ fn rocket() -> _ {
     let cors = rocket_cors::CorsOptions {
         allowed_origins,
         allowed_methods: vec![rocket::http::Method::Get, rocket::http::Method::Post, rocket::http::Method::Put].into_iter().map(From::from).collect(),
-        allowed_headers: AllowedHeaders::some(&["Authorization", "Accept", "X-USER"]),
+        // allowed_headers: AllowedHeaders::some(&["Authorization", "Accept", "X-USER"]),
+        allowed_headers: AllowedHeaders::all(),
         allow_credentials: true,
         ..Default::default()
     };
