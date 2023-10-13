@@ -1,10 +1,11 @@
-use crate::{models::user_model::User, repository::mongodb_repo::MongoRepo};
+use crate::{models::user_model::User, repository::mongodb_repo::MongoRepo, repository::s3bucket_repo::S3BucketService};
 use mongodb::results::InsertOneResult;
 use rocket::{http::Status, serde::json::Json, State};
 use rocket::request::{self, Request, FromRequest, Outcome};
 
 #[derive(Debug)]
 pub struct UserEmail(String);
+pub struct ImageData(String);
 
 #[rocket::async_trait]
 impl<'a> FromRequest<'a> for UserEmail {
@@ -128,5 +129,21 @@ pub fn get_user_by_substring(db: &State<MongoRepo>, path: String) -> Result<Json
     match user_list {
         Ok(user_list) => Ok(Json(user_list)),
         Err(_) => Err(Status::BadRequest),
+    }
+}
+
+#[post("/user/profile/avatar/upload", data = "<image_data>")]
+pub fn upload_user_avatar(
+    s3: &State<S3BucketService>,
+    image_data: Json<ImageData>,
+) -> Result<Json<String>, Status> {
+    let object_key = "example.jpg"; // Replace with a dynamic key if needed
+
+    match aws_service.upload_image(&object_key, &image_data.image).await {
+        Ok(_) => {
+            let public_url = aws_service.generate_public_url(&object_key);
+            Ok(content::Json(public_url))
+        }
+        Err(_) => Err(Status::InternalServerError),
     }
 }
