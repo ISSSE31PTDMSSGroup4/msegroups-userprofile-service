@@ -1,11 +1,20 @@
 use crate::{models::user_model::User, repository::mongodb_repo::MongoRepo, repository::s3bucket_repo::S3BucketService};
 use mongodb::results::InsertOneResult;
-use rocket::{http::Status, serde::json::Json, State};
+use rocket::{http::Status, serde::json::Json, State, http::ContentType};
 use rocket::request::{self, Request, FromRequest, Outcome};
+use rocket::data::Data;
+use rocket::response::status::BadRequest;
+use rocket_multipart_form_data::{mime, multer, MultipartFormData, MultipartFormDataField, MultipartFormDataOptions, MultipartFormDataError};
 
 #[derive(Debug)]
 pub struct UserEmail(String);
+#[derive(Debug)]
 pub struct ImageData(String);
+#[derive(Debug)]
+pub struct UploadResponse{
+    success: bool,
+    message: String,
+}
 
 #[rocket::async_trait]
 impl<'a> FromRequest<'a> for UserEmail {
@@ -19,7 +28,7 @@ impl<'a> FromRequest<'a> for UserEmail {
     }
 }
 
-#[post("/user/profile", data = "<new_user>")]
+#[post("/api/user/profile", data = "<new_user>")]
 pub fn create_user_profile(
     db: &State<MongoRepo>,
     new_user: Json<User>,
@@ -40,7 +49,7 @@ pub fn create_user_profile(
     }
 }
 
-#[get("/user/profile")]
+#[get("/api/user/profile")]
 pub fn get_user_profile(db: &State<MongoRepo>, user_email: UserEmail) -> Result<Json<User>, Status> {
     // let id = path;
     // let name = path;
@@ -55,7 +64,7 @@ pub fn get_user_profile(db: &State<MongoRepo>, user_email: UserEmail) -> Result<
     }
 }
 
-#[put("/user/profile/update", data = "<new_user>")]
+#[put("/api/user/profile/update", data = "<new_user>")]
 pub fn update_user_profile(
     db: &State<MongoRepo>,
     new_user: Json<User>,
@@ -109,7 +118,7 @@ pub fn delete_user_profile(db: &State<MongoRepo>, path: String) -> Result<Json<&
     }
 }
 
-#[get("/user/profiles")]
+#[get("/api/user/profiles")]
 pub fn get_all_users(db: &State<MongoRepo>) -> Result<Json<Vec<User>>, Status> {
     let users = db.get_all_users();
     match users {
@@ -118,7 +127,7 @@ pub fn get_all_users(db: &State<MongoRepo>) -> Result<Json<Vec<User>>, Status> {
     }
 }
 
-#[get("/user/profile/search/<path>")]
+#[get("/api/user/profile/search/<path>")]
 pub fn get_user_by_substring(db: &State<MongoRepo>, path: String) -> Result<Json<Vec<User>>, Status> {
     // let id = path;
     let name_substr = path;
@@ -132,18 +141,81 @@ pub fn get_user_by_substring(db: &State<MongoRepo>, path: String) -> Result<Json
     }
 }
 
-#[post("/user/profile/avatar/upload", data = "<image_data>")]
+#[post("/api/user/profile/avatar/upload", data = "<image_data>")]
 pub fn upload_user_avatar(
     s3: &State<S3BucketService>,
-    image_data: Json<ImageData>,
-) -> Result<Json<String>, Status> {
-    let object_key = "example.jpg"; // Replace with a dynamic key if needed
-
-    match aws_service.upload_image(&object_key, &image_data.image).await {
-        Ok(_) => {
-            let public_url = aws_service.generate_public_url(&object_key);
-            Ok(content::Json(public_url))
+    content_type: &ContentType,
+    image_data: Data<'_>,
+) -> Result<Json<UploadResponse>, Status> {
+    // Define the options for parsing the multipart form data
+    let options = MultipartFormDataOptions::with_multipart_form_data_fields(vec![MultipartFormDataField::raw("image")
+                                                                                .size_limit(10 * 1024 * 1024)                         // Set the size limit for the image file
+                                                                                .content_type_by_string(Some(mime::IMAGE_STAR))     // Set the content type for the image file
+                                                                                .unwrap(),
+                                                                            ]);
+    // Parse the multipart form data
+    let mut multipart_form_data = match MultipartFormData::parse(content_type, image_data, options).await
+    {
+        Ok(multipart_form_data) => multipart_form_data,
+        Err(err) => {
+            match err {
+                MultipartFormDataError::DataTooLargeError(_) => {
+                    return Err(Status::BadRequest);
+                },
+                MultipartFormDataError::DataTypeError(_) => {
+                    return Err(Status::BadRequest);
+                },
+                MultipartFormDataError::MulterError(multer::Error::IncompleteFieldData {
+                    ..
+                })
+                | MultipartFormDataError::MulterError(multer::Error::IncompleteHeaders {
+                    ..
+                }) => {
+                    // may happen when we set the max_data_bytes limitation
+                    return Err(Status::BadRequest);
+                },
+                _ => panic!("{:?}", err),
+            }
         }
-        Err(_) => Err(Status::InternalServerError),
+    };
+
+    // Get the image file from the form data
+    let image = multipart_form_data.raw.remove("image");
+    
+    // Check if the image file exists and is valid
+    if let Some(mut image) = image {
+        // Get the first image file (ignore multiple files)
+        let image = image.remove(0);
+        // Get the file name and content type of the image file
+        let file_name = image.file_name;
+        let content_type = image.content_type;
+        // Get the raw bytes of the image file
+        let raw_data = image.raw;
+        // Do something with the image file, such as saving it to disk or processing it
+        // For simplicity, we just print some information here
+        println!("Filename: {:?}", file_name);
+        println!("Content type: {:?}", content_type);
+        println!("Raw data length: {}", raw_data.len());
+
+        // Return a success response with a message
+        let resp: UploadResponse = UploadResponse {
+            success: true,
+            message: "image uploaded successfully".to_string(),
+
+        };
+        Ok(Json(resp))
+    } else {
+        // Return an error response with a message
+        Err(Status::BadRequest)
     }
+    
+    // let object_key = "example.jpg"; // Replace with a dynamic key if needed
+
+    // match aws_service.upload_image(&object_key, &image_data.image).await {
+    //     Ok(_) => {
+    //         let public_url = aws_service.generate_public_url(&object_key);
+    //         Ok(content::Json(public_url))
+    //     }
+    //     Err(_) => Err(Status::InternalServerError),
+    // }
 }
