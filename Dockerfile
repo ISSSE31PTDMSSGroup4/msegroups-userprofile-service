@@ -12,6 +12,9 @@ RUN cargo build --release
 
 FROM debian:buster-slim as runner
 WORKDIR /app
+RUN mkdir -p /app/uploads
+RUN apt update
+RUN apt install ca-certificates -y
 
 COPY --from=builder /app/target/release/userprofile-api /app/userprofile-api
 # COPY .env ../
