@@ -12,7 +12,7 @@ use rocket_cors::{AllowedHeaders, AllowedOrigins};
 
 
 #[launch]
-fn rocket() -> _ {
+pub fn rocket() -> _ {
     let db = MongoRepo::init();
     // let s3 = S3BucketService::init();
     let allowed_origins = AllowedOrigins::all();

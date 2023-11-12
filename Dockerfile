@@ -1,5 +1,5 @@
 # FROM rust:1.71-slim-buster
-FROM rustlang/rust:nightly-buster-slim AS builder
+FROM rustlang/rust:nightly-2023-08-22  AS builder
 
 # Environment variable for rocket
 ENV ROCKET_PROFILE=production

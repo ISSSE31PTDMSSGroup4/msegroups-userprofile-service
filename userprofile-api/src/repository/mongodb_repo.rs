@@ -43,11 +43,22 @@ impl MongoRepo {
     pub fn get_user_profile(&self, user_email: &String) -> Result<User, Error> {
         // let obj_name = ObjectId::parse_str(name).unwrap();
         // let filter = doc! {"_id": obj_id};
+        let empty_doc = User {
+            id: None,
+            name: String::new(),
+            avatar: String::new(),
+            email: String::new(),
+            about: String::new(),
+        };
 
         let filter = doc! {"email": user_email};
 
-        let user_detail = self.col.find_one(filter, None).ok().expect("Error getting user's profile");
-        Ok(user_detail.unwrap())
+        let user_detail = self.col.find_one(filter, None).ok().expect("Error getting user");
+        match user_detail {
+            Some(user) => Ok(user),
+            None => Ok(empty_doc),
+        }
+        // Ok(user_detail.unwrap())
     }
 
     pub fn update_user_profile(&self, user_email:&String, new_user: User) -> Result<UpdateResult, Error> {
@@ -72,10 +83,11 @@ impl MongoRepo {
         Ok(updated_doc)
     }
 
-    pub fn delete_user_profile(&self, id: &String) -> Result<DeleteResult, Error> {
-        let obj_id = ObjectId::parse_str(id).unwrap();
-        let filter = doc! {"_id": obj_id};
-        let user_detail = self.col.delete_one(filter, None).ok().expect("Error deleting user");
+    pub fn delete_user_profile(&self, user_email:&String,) -> Result<DeleteResult, Error> {
+        let filter_name = doc! {"email": user_email};
+        // let obj_id = ObjectId::parse_str(id).unwrap();
+        // let filter = doc! {"_id": obj_id};
+        let user_detail = self.col.delete_one(filter_name, None).ok().expect("Error deleting user");
         Ok(user_detail)
     }
 
