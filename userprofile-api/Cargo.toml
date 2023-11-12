@@ -1,18 +1,31 @@
 [package]
 name = "userprofile-api"
-version = "0.1.0"
+version = "0.4.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+# dotenv = "0.15.0"
 
 [dependencies]
-rocket = {version = "0.5.0-rc.2", features = ["json"]}
+rocket = {version = "= 0.5.0-rc.3", features = ["json"]}
 serde = "1.0.136"
-dotenv = "0.15.0"
 rocket_cors = { git = "https://github.com/lawliet89/rocket_cors", branch = "master" }
 regex = "1.5"
+tokio = { version = "1.0", features = ["full"] }
+aws-config = "0.56.1"
+aws-sdk-s3 = "0.33.0"
+rocket-multipart-form-data = "0.10.6"
+chrono = "0.4.31"
 
 [dependencies.mongodb]
 version = "2.2.0"
 default-features = false
 features = ["sync"]
+
+[dependencies.uuid]
+version = "1.5.0"
+features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
