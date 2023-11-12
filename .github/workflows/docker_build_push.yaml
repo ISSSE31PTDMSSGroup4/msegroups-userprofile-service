@@ -10,12 +10,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Change Directory
-        run: cd userprofile-api
       - name: Run Build
         run: cargo build --verbose
+        working-directory: ./userprofile-api
       - name: Run Test
         run: cargo test
+        working-directory: ./userprofile-api
   docker:
     needs: test
     runs-on: ubuntu-latest
@@ -30,7 +30,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
           
       - name: Build Docker image
-        run: docker build . --file ../Dockerfile --tag kedy1ykh/mse-user-profile-service:$(date +%s) --tag kedy1ykh/mse-user-profile-service:latest
+        run: docker build . --file Dockerfile --tag kedy1ykh/mse-user-profile-service:$(date +%s) --tag kedy1ykh/mse-user-profile-service:latest
       
       - name: Push Docker image
         run: docker push kedy1ykh/mse-user-profile-service
