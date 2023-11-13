@@ -2,7 +2,7 @@ name: Update AWS service
  
 on:
   workflow_run:
-    workflows: ["Push user profile service to dockerhub"]
+    workflows: ["Push user profile service to dockerhub"]    # change this to build and push workflow name
     branches: 
       - 'main'
     types: 
@@ -18,7 +18,7 @@ jobs:
     env:
       AWS_REGION: ap-southeast-1
       CLUSTER_NAME: msegroupscluster
-      SERVICE_NAME: userprofile-service
+      SERVICE_NAME: userprofile-service    # change this to service name
     
     steps:
     - name: Configure AWS Credentials
