@@ -1,0 +1,33 @@
+name: Update AWS service
+ 
+on:
+  workflow_run:
+    workflows: ["Push user profile service to dockerhub"]
+    branches: 
+      - 'main'
+    types: 
+      - completed
+      
+permissions:
+ id-token: write
+ contents: read# This is required for actions/checkout
+
+jobs:
+  update_aws_service:
+    runs-on: ubuntu-latest 
+    env:
+      AWS_REGION: ap-southeast-1
+      CLUSTER_NAME: msegroupscluster
+      SERVICE_NAME: userprofile-service
+    
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{secrets.AWS_ECS_ROLE_TO_ASSUME}}
+        aws-region: ${{env.AWS_REGION}}
+    
+    - name: Update ECS Service
+      run: |
+        aws ecs update-service --cluster ${{env.CLUSTER_NAME}} --service ${{env.SERVICE_NAME}} --force-new-deployment
+        
